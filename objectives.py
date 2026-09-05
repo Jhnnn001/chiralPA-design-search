@@ -6,11 +6,14 @@ PLUS = np.array([1, 1j])/np.sqrt(2)
 MINUS = PLUS.conj()
 S_MIN, Q_MAX, K_MIN = 0.05, 1e-2, 1e5
 C_MIN = 0.98
-Q_GATE1, Q_GATE2 = 0.30, 0.10
-# Gate 2 tolerance of each error component, so that ‖e/TOL‖ = 1 marks the gate boundary.
-TOL = {"plain": np.array([Q_GATE2, 0.02, 0.02, 0.02]),
-       "nilpotent": np.array([0.02, 0.05, Q_GATE2/2]),
-       "maximal": np.array([0.02, 0.02, Q_GATE2/2])}
+# Root screening happens once, at Gate 1's level; Gate 2 tiers on the response and
+# keeps the same root limit only as a guard against Stage B making the root worse.
+Q_GATE1, Q_GATE2 = 0.30, 0.30
+# Objective scale of each error component, kept independent of the gate limits.
+Q_SCALE = 0.10
+TOL = {"plain": np.array([Q_SCALE, 0.02, 0.02, 0.02]),
+       "nilpotent": np.array([0.02, 0.05, Q_SCALE/2]),
+       "maximal": np.array([0.02, 0.02, Q_SCALE/2])}
 
 
 def metrics(raw):

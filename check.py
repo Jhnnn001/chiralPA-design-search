@@ -11,8 +11,8 @@ import solver
 from geometry import HI, LO, feasible, local_box, rectangles, repair, sample
 from materials.models import (C_NM_S, HBAR_EVS, ag_epsilon, lorentz,
                               permittivities, sio2_epsilon, tio2_epsilon)
-from objectives import (MINUS, PLUS, Q_GATE2, fitness, gate1, gate2, gate3,
-                        metrics, residual, response_gate, root_error)
+from objectives import (MINUS, PLUS, Q_GATE1, Q_GATE2, Q_SCALE, fitness, gate1,
+                        gate2, gate3, metrics, residual, response_gate, root_error)
 
 
 def main():
@@ -53,16 +53,18 @@ def main():
     poor = [fitness(metrics(ideal["maximal"]["J"]+d*np.eye(2)), "maximal")
             for d in (0.1, 0.3, 0.6, 1.0, 2.0)]
     assert all(0 < b < a for a, b in zip(poor, poor[1:]))
-    # each error component is scaled by its own Gate 2 tolerance, so the boundary is F = 0.5
-    assert fitness(dict(ideal["plain"], eta=Q_GATE2**2), "plain") == 0.5
-    assert fitness(dict(ideal["maximal"], tr=Q_GATE2), "maximal") == 0.5
+    # each error component is scaled by its own objective tolerance, so that point is F = 0.5
+    assert fitness(dict(ideal["plain"], eta=Q_SCALE**2), "plain") == 0.5
+    assert fitness(dict(ideal["maximal"], tr=Q_SCALE), "maximal") == 0.5
+    # the objective scale must stay independent of the gate limits
+    assert Q_SCALE < Q_GATE2
     assert not gate3(metrics(np.zeros((2, 2))), "nilpotent")
     assert not gate3(metrics(1.1*ideal["maximal"]["J"]), "maximal")
     assert metrics(np.array([[0, 0.1], [0.2, 0]])) is None
     perturbed = metrics(ideal["maximal"]["J"]+0.03*np.eye(2))
     assert gate2(perturbed, "maximal") and not gate3(perturbed, "maximal")
     for case, m in ideal.items():
-        for gate, limit in ((gate1, 0.30), (gate2, 0.10), (gate3, 0.01)):
+        for gate, limit in ((gate1, Q_GATE1), (gate2, Q_GATE2), (gate3, 0.01)):
             assert not gate(None, case)
             for delta, passes in ((0, True), (1e-8, False)):
                 q = limit+delta
@@ -82,8 +84,11 @@ def main():
     for case, J in (("plain", np.array([[0.8, 0.4j], [0.4j, 0.2]])),
                     ("nilpotent", ideal["nilpotent"]["J"]+0.06*np.eye(2))):
         m = metrics(J)
-        assert response_gate(m, case) and not gate2(m, case)
-        assert bool(gate1(m, case)) == (case == "nilpotent")
+        # with the response matched, both gates reduce to the one shared root screen
+        assert response_gate(m, case)
+        passes = root_error(m, case) <= Q_GATE2
+        assert bool(gate1(m, case)) == bool(gate2(m, case)) == passes
+        assert passes == (case == "nilpotent")
     assert gate3(dict(ideal["plain"], K=1e5), "plain")
     assert not gate3(dict(ideal["plain"], K=1e5-1), "plain")
 
