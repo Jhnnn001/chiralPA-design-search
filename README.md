@@ -2,21 +2,50 @@
 
 Code accompanying supplementary Note S5 of *Chiral Perfect Absorption in Flat Optics: A Jones Exceptional Point of Maximal Response Strength*.
 
+## Dependencies
+
+Required:
+
+- S4 with its Lua frontend — the RCWA solver.
+- Lua development libraries and a C/C++ compiler — needed to build S4.
+- Python 3.11 or later.
+- NumPy and SciPy — versions are specified in `requirements.txt`.
+- Git — for cloning this repository.
+
+Optional (material refitting only):
+
+- [AAA](https://docs.scipy.org/doc/scipy-1.15.3/reference/generated/scipy.interpolate.AAA.html) (`scipy.interpolate.AAA`) — included in SciPy 1.15 or later; no separate package installation is needed.
+
 ## Install
 
-Use Python 3.11 or later and the [S4 Lua executable](https://web.stanford.edu/group/fan/S4/install.html).
-Install S4 separately and make the executable available as `S4` on your PATH, or supply it with `--s4`.
-The upstream build requires a C/C++ compiler and Lua development libraries; its installation page lists the optional numerical libraries.
+1. Clone this repository and enter its directory.
 
-```sh
-python -m venv .venv
-source .venv/bin/activate
-python -m pip install -r requirements.txt
-python check.py
-python check.py --s4 S4
-```
+   ```sh
+   git clone https://github.com/Jhnnn001/chiralPA-design-search.git
+   cd chiralPA-design-search
+   ```
 
-NumPy and SciPy are the Python dependencies; SciPy 1.15 or later supplies [AAA](https://docs.scipy.org/doc/scipy-1.15.3/reference/generated/scipy.interpolate.AAA.html) for the optional material refit.
+2. Build the S4 Lua frontend following the [S4 installation guide](https://web.stanford.edu/group/fan/S4/install.html), using the Lua development libraries and C/C++ compiler listed above.
+   Make the resulting executable available as `S4` on your PATH.
+   If S4 is already installed, skip this step.
+
+3. Create a Python environment and install the Python dependencies.
+   The commands below use a Unix-style shell.
+
+   ```sh
+   python3 -m venv .venv
+   source .venv/bin/activate
+   python -m pip install -r requirements.txt
+   ```
+
+4. Check the installation.
+
+   ```sh
+   python check.py
+   python check.py --s4 S4
+   ```
+
+   If S4 is not on your PATH, replace `--s4 S4` with `--s4 /path/to/S4` in the check and search commands.
 
 ## Run
 
