@@ -6,6 +6,7 @@ PLUS = np.array([1, 1j])/np.sqrt(2)
 MINUS = PLUS.conj()
 S_MIN, Q_MAX, K_MIN = 0.05, 1e-2, 1e5
 C_MIN = 0.98
+Q_GATE1, Q_GATE2 = 0.30, 0.10
 
 
 def metrics(raw):
@@ -69,18 +70,28 @@ def residual(m, p, case, weight, lam0):
                  weight*profile(m, case), weight*(p[10]-lam0)/lam0]
 
 
-def gate1(m, case):
+def response_gate(m, case, loose=False):
     if m is None:
         return False
     if case == "maximal":
-        return m["C"] >= C_MIN
+        return m["C"] >= (0.85 if loose else C_MIN)
+    tolerance = 0.10 if loose else 0.02
     if case == "nilpotent":
-        return abs(m["C"]-0.36) <= 0.03 and abs(m["Ap"]-1) <= 0.02
-    return np.all(np.abs(profile(m, case)) <= 0.02) and m["C"] > 0
+        return (abs(m["C"]-0.36) <= (0.10 if loose else 0.03)
+                and abs(m["Ap"]-1) <= tolerance)
+    return np.all(np.abs(profile(m, case)) <= tolerance) and m["C"] > 0
+
+
+def gate1(m, case):
+    return response_gate(m, case, loose=True) and root_error(m, case) <= Q_GATE1
 
 
 def gate2(m, case):
-    return (gate1(m, case) and m["scale"] > 0 and m["s1"] <= 1+1e-8
+    return response_gate(m, case) and root_error(m, case) <= Q_GATE2
+
+
+def gate3(m, case):
+    return (gate2(m, case) and m["scale"] > 0 and m["s1"] <= 1+1e-8
             and root_error(m, case) <= Q_MAX and m["K"] >= K_MIN)
 
 

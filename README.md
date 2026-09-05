@@ -61,13 +61,32 @@ python search.py plain --seed 0 --trials 10 --workers 4
 python search.py --help
 ```
 
-Each run creates a new directory under `runs/`, containing `settings.json`, the visited Stage B/C candidates in `candidates.jsonl`, and `result.json`.
-`result.json` reports `found` only after both gates and fresh validation pass; exhausting the search returns `not_found` and exit code 1.
+Each run creates a new directory under `runs/`, containing `settings.json`, `candidates.jsonl`, and `result.json`.
+`candidates.jsonl` records each trial's Stage A population size, Gate 1 pass count, and selected count, followed by the visited Stage B/C candidates with `gate1`, `gate2`, and `gate3` flags.
+`result.json` records `trials_completed` and reports `found` only after Gate 3 and fresh validation pass; exhausting the search returns `not_found` and exit code 1.
 Settings and tolerances are in the command-line defaults and `objectives.py`.
 The common solver setting is configurable with `--numg` and recorded in `settings.json`.
 Search acceptance does not establish Fourier-order convergence.
 Use `--output runs/my-run` to choose a new output directory; existing directories are never overwritten.
 To refine a saved design from Stage B onward, use `--start design.json`, where `design.json` contains the `p_nm` object written in a candidate or result record.
+This skips Stage A and Gate 1 selection; Gates 2 and 3 still apply.
+
+The search follows Stage A → Gate 1 → Stage B → Gate 2 → Stage C → Gate 3.
+Gate 1 filters the final Stage A population before selecting at most six distinct candidates in descending F order, using a normalized separation greater than 0.02.
+If none pass, the next trial starts without running Stage B.
+
+| Target | Gate 1 response tests | Gate 2 response tests |
+| --- | --- | --- |
+| Maximal response | C ≥ 0.85 | C ≥ 0.98 |
+| Zero eigenvalue (`nilpotent`) | C within 0.10 of 0.36; A₊ within 0.10 of 1 | C within 0.03 of 0.36; A₊ within 0.02 of 1 |
+| Plain | σ₁ − σ₂ within 0.10 of 0.6; Ā within 0.10 of 0.5; C > 0 | Same targets within 0.02; C > 0 |
+
+Here C = A₊ − A₋ and Ā = (A₊ + A₋)/2.
+Gates 1 and 2 additionally require `root_error` ≤ 0.30 and ≤ 0.10 respectively for every target.
+The diagnostic is √η_D with S_D ≥ 0.05 for plain EPs, and max(|tr J|, √|det J|) for the zero-eigenvalue and maximal-response targets.
+These two EP screening limits are provisional settings, without a search-success calibration.
+Gate 3 retains the strict response tests and requires `root_error` ≤ 0.01, K ≥ 100000, S_D > 0, σ₁ ≤ 1 + 10⁻⁸, and admissible geometry, followed by three fresh matching Jones evaluations.
+The former Gates 1 and 2 are now Gates 2 and 3, with the EP proximity test added to Gate 2 and the final acceptance criteria preserved.
 
 For a short execution check, with no expectation of finding an EP:
 

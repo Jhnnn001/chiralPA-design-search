@@ -11,8 +11,8 @@ import solver
 from geometry import HI, LO, feasible, local_box, rectangles, repair, sample
 from materials.models import (C_NM_S, HBAR_EVS, ag_epsilon, lorentz,
                               permittivities, sio2_epsilon, tio2_epsilon)
-from objectives import (MINUS, PLUS, fitness, gate1, gate2, metrics,
-                        residual, root_error)
+from objectives import (MINUS, PLUS, fitness, gate1, gate2, gate3, metrics,
+                        residual, response_gate, root_error)
 
 
 def main():
@@ -41,7 +41,7 @@ def main():
         J = alpha*np.eye(2)+beta*np.outer(PLUS, MINUS.conj())
         m = metrics(J)
         ideal[case] = m
-        assert gate1(m, case) and gate2(m, case)
+        assert gate1(m, case) and gate2(m, case) and gate3(m, case)
         assert abs(m["C"]-beta**2) < 1e-12
         assert abs(m["s1"]*m["s2"]-alpha**2) < 1e-12
         assert abs(fitness(m, case)-1) < 1e-7 and root_error(m, case) < 1e-7
@@ -49,11 +49,46 @@ def main():
         assert np.linalg.norm(residual(m, p, case, 0.3, p[10])) < 1e-12
     scalar = metrics(0.3*np.eye(2))
     assert scalar["K"] == 1 and fitness(scalar, "plain") == -1
-    assert not gate2(metrics(np.zeros((2, 2))), "nilpotent")
-    assert not gate2(metrics(1.1*ideal["maximal"]["J"]), "maximal")
+    assert not gate3(metrics(np.zeros((2, 2))), "nilpotent")
+    assert not gate3(metrics(1.1*ideal["maximal"]["J"]), "maximal")
     assert metrics(np.array([[0, 0.1], [0.2, 0]])) is None
     perturbed = metrics(ideal["maximal"]["J"]+0.03*np.eye(2))
-    assert gate1(perturbed, "maximal") and not gate2(perturbed, "maximal")
+    assert gate2(perturbed, "maximal") and not gate3(perturbed, "maximal")
+    for case, m in ideal.items():
+        for gate, limit in ((gate1, 0.30), (gate2, 0.10), (gate3, 0.01)):
+            assert not gate(None, case)
+            for delta, passes in ((0, True), (1e-8, False)):
+                q = limit+delta
+                changed = dict(m, eta=q*q) if case == "plain" else dict(m, tr=q, det=0)
+                assert bool(gate(changed, case)) == passes
+        assert not gate1(dict(m, scale=0), "plain")
+    for gate, cmin in ((gate1, 0.85), (gate2, 0.98)):
+        assert gate(dict(ideal["maximal"], C=cmin), "maximal")
+        assert not gate(dict(ideal["maximal"], C=np.nextafter(cmin, 0)), "maximal")
+    for gate, eps_c, eps_a in ((gate1, 0.10, 0.10), (gate2, 0.03, 0.02)):
+        for delta, passes in ((-1e-8, True), (1e-8, False)):
+            assert bool(gate(dict(ideal["nilpotent"], C=0.36+eps_c+delta), "nilpotent")) == passes
+            assert bool(gate(dict(ideal["nilpotent"], Ap=1-eps_a-delta), "nilpotent")) == passes
+            assert bool(gate(dict(ideal["plain"], mean=0.5+eps_a+delta), "plain")) == passes
+            assert bool(gate(dict(ideal["plain"], s1=ideal["plain"]["s1"]+eps_a+delta), "plain")) == passes
+        assert not gate(dict(ideal["plain"], C=0), "plain")
+    for case, J in (("plain", np.array([[0.8, 0.4j], [0.4j, 0.2]])),
+                    ("nilpotent", ideal["nilpotent"]["J"]+0.06*np.eye(2))):
+        m = metrics(J)
+        assert response_gate(m, case) and not gate2(m, case)
+        assert bool(gate1(m, case)) == (case == "nilpotent")
+    assert gate3(dict(ideal["plain"], K=1e5), "plain")
+    assert not gate3(dict(ideal["plain"], K=1e5-1), "plain")
+
+    pop = np.tile([200, 200, 40, 40, 40, 40, 100, 100, 300, 300, 600], (9, 1)).astype(float)
+    pop[:, 7] = np.linspace(20, 500, len(pop))
+    m = ideal["maximal"]
+    selected = search.survivors(np.vstack([pop[0], pop]), [None]+[m]*len(pop), "maximal")
+    assert np.array_equal(selected, pop[:6])
+    assert np.array_equal(search.survivors(np.vstack([pop[0], pop]), [m]*10, "maximal"), pop[:6])
+    assert np.array_equal(search.survivors(pop, [None]*7+[m]*2, "maximal"), pop[7:])
+    assert search.survivors(pop, [None]*len(pop), "maximal") == []
+    assert np.array_equal(search.survivors(pop[:2], [metrics(0.98*m["J"]), m], "maximal"), pop[1::-1])
     for case, n_eq in (("plain", 2), ("nilpotent", 4), ("maximal", 4)):
         a = residual(perturbed, p, case, 0.3, p[10]-1)
         b = residual(perturbed, p, case, 0.05, p[10]-1)
@@ -102,11 +137,13 @@ def main():
             with patch("solver.solve", return_value=m):
                 pop = search.stage_a(ev, rng, case, population=3, generations=1)
                 p1, m1 = search.stage_b(ev, pop[0], case, budget=30)
-                assert feasible(p1) and gate1(m1, case)
+                assert feasible(p1) and gate2(m1, case)
                 with patch("search.least_squares", wraps=search.least_squares) as calls:
                     p2, m2 = search.stage_c(ev, p1, case, rng, budget=100, starts=1)
                     assert [call.kwargs["args"][0] for call in calls.call_args_list] == [0.3, 0.05]
-                assert feasible(p2) and gate2(m2, case)
+                assert feasible(p2) and gate3(m2, case)
+                row = search.record(p2, m2, case)
+                assert all(row[name] for name in ("gate1", "gate2", "gate3"))
                 before = ev.nfev
                 assert search.validate(ev, p2, case) is not None
                 assert ev.nfev-before == 3

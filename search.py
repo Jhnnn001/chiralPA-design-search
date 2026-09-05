@@ -9,7 +9,7 @@ import scipy
 from scipy.optimize import least_squares, minimize
 
 from geometry import HI, LO, NAMES, feasible, local_box, margins, repair, sample
-from objectives import CASES, S_MIN, fitness, gate1, gate2, priority, residual, root_error
+from objectives import CASES, fitness, gate1, gate2, gate3, priority, residual, root_error
 from solver import BudgetReached, Evaluator
 
 
@@ -46,9 +46,13 @@ def stage_a(ev, rng, case, population=100, generations=100):
     return pop[np.argsort(-fit, kind="stable")]
 
 
-def survivors(pop):
+def survivors(pop, responses, case):
+    """Rank by F and apply Gate 1 before diversity selection."""
     selected = []
-    for p in pop:
+    ranked = sorted(zip(pop, responses), key=lambda item: fitness(item[1], case), reverse=True)
+    for p, m in ranked:
+        if not gate1(m, case):
+            continue
         if all(np.linalg.norm((p-q)/(HI-LO)) > 0.02 for q in selected):
             selected.append(p)
         if len(selected) == 6:
@@ -95,10 +99,10 @@ def stage_c(ev, p0, case, rng, budget=4000, starts=4):
         nonlocal best, accepted
         p = lo+np.clip(u, 0, 1)*span
         m = ev.one(p)
-        if gate1(m, case) and (case != "plain" or m["scale"] >= S_MIN):
+        if gate2(m, case):
             if best is None or priority(m, case) > priority(best[1], case):
                 best = (p, m)
-            if gate2(m, case) and (accepted is None or priority(m, case) > priority(accepted[1], case)):
+            if gate3(m, case) and (accepted is None or priority(m, case) > priority(accepted[1], case)):
                 accepted = (p, m)
         return residual(m, p, case, weight, p0[10])
 
@@ -128,7 +132,7 @@ def validate(ev, p, case):
     for _ in range(3):
         ev.reset()
         m = ev.one(p)
-        if not gate2(m, case):
+        if not gate3(m, case):
             return None
         raw.append(m["raw"])
     tolerance = 1e-12*max(1, np.abs(raw[0]).max())
@@ -138,14 +142,16 @@ def validate(ev, p, case):
 
 
 def record(p, m, case):
-    result = dict(case=case, p_nm=dict(zip(NAMES, p.tolist())), gate1=False, gate2=False)
+    result = dict(case=case, p_nm=dict(zip(NAMES, p.tolist())),
+                  gate1=False, gate2=False, gate3=False)
     if m is not None:
         keys = ("Ap", "Am", "C", "mean", "s1", "s2", "K", "scale", "reciprocity")
         result["metrics"] = {key: float(m[key]) for key in keys}
         result["metrics"]["F"] = float(fitness(m, case))
         q = root_error(m, case)
         result["metrics"]["root_error"] = float(q) if np.isfinite(q) else None
-        result.update(gate1=bool(gate1(m, case)), gate2=bool(feasible(p) and gate2(m, case)),
+        result.update(gate1=bool(gate1(m, case)), gate2=bool(gate2(m, case)),
+                      gate3=bool(feasible(p) and gate3(m, case)),
                       J_real=m["raw"].real.tolist(), J_imag=m["raw"].imag.tolist())
     return result
 
@@ -193,13 +199,23 @@ def main():
         for trial in range(args.trials if p0 is None else 1):
             rng = np.random.default_rng(np.random.SeedSequence([args.seed, trial]))
             print(f"Trial {trial+1}: {args.case}", flush=True)
-            pop = [p0] if p0 is not None else stage_a(ev, rng, args.case, args.population, args.generations)
-            for p in survivors(pop):
+            if p0 is None:
+                pop = stage_a(ev, rng, args.case, args.population, args.generations)
+                responses = ev.batch(pop)
+                candidates = survivors(pop, responses, args.case)
+                passed = sum(bool(gate1(m, args.case)) for m in responses)
+                print(f"A: gate1={passed}/{len(pop)}, selected={len(candidates)}", flush=True)
+                with (output/"candidates.jsonl").open("a") as f:
+                    f.write(json.dumps(dict(trial=trial+1, stage="A", population=len(pop),
+                                            gate1_passed=passed, selected=len(candidates)))+"\n")
+            else:
+                candidates = [p0]
+            for p in candidates:
                 p, m = stage_b(ev, p, args.case, args.budget_b)
                 with (output/"candidates.jsonl").open("a") as f:
                     f.write(json.dumps(dict(trial=trial+1, stage="B", **record(p, m, args.case)))+"\n")
-                print(f"B: F={fitness(m, args.case):.6f}, gate1={bool(gate1(m, args.case))}", flush=True)
-                if not gate1(m, args.case):
+                print(f"B: F={fitness(m, args.case):.6f}, gate2={bool(gate2(m, args.case))}", flush=True)
+                if not gate2(m, args.case):
                     continue
                 candidate = stage_c(ev, p, args.case, rng, args.budget_c, args.starts)
                 if candidate is None:
@@ -207,15 +223,15 @@ def main():
                 p, m = candidate
                 with (output/"candidates.jsonl").open("a") as f:
                     f.write(json.dumps(dict(trial=trial+1, stage="C", **record(p, m, args.case)))+"\n")
-                print(f"C: root={root_error(m, args.case):.3e}, gate2={bool(gate2(m, args.case))}", flush=True)
-                if gate2(m, args.case):
+                print(f"C: root={root_error(m, args.case):.3e}, gate3={bool(gate3(m, args.case))}", flush=True)
+                if gate3(m, args.case):
                     checked = validate(ev, p, args.case)
                     if checked is not None:
                         found = record(p, checked, args.case)
                         break
             if found is not None:
                 break
-        result = dict(status="found" if found is not None else "not_found",
+        result = dict(status="found" if found is not None else "not_found", trials_completed=trial+1,
                       evaluations=ev.nfev, failed_evaluations=ev.nfail)
         if found is not None:
             result.update(found)
