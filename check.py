@@ -11,8 +11,8 @@ import solver
 from geometry import HI, LO, feasible, local_box, rectangles, repair, sample
 from materials.models import (C_NM_S, HBAR_EVS, ag_epsilon, lorentz,
                               permittivities, sio2_epsilon, tio2_epsilon)
-from objectives import (MINUS, PLUS, fitness, gate1, gate2, gate3, metrics,
-                        residual, response_gate, root_error)
+from objectives import (MINUS, PLUS, Q_GATE2, fitness, gate1, gate2, gate3,
+                        metrics, residual, response_gate, root_error)
 
 
 def main():
@@ -53,6 +53,9 @@ def main():
     poor = [fitness(metrics(ideal["maximal"]["J"]+d*np.eye(2)), "maximal")
             for d in (0.1, 0.3, 0.6, 1.0, 2.0)]
     assert all(0 < b < a for a, b in zip(poor, poor[1:]))
+    # each error component is scaled by its own Gate 2 tolerance, so the boundary is F = 0.5
+    assert fitness(dict(ideal["plain"], eta=Q_GATE2**2), "plain") == 0.5
+    assert fitness(dict(ideal["maximal"], tr=Q_GATE2), "maximal") == 0.5
     assert not gate3(metrics(np.zeros((2, 2))), "nilpotent")
     assert not gate3(metrics(1.1*ideal["maximal"]["J"]), "maximal")
     assert metrics(np.array([[0, 0.1], [0.2, 0]])) is None

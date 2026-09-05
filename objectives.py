@@ -7,6 +7,10 @@ MINUS = PLUS.conj()
 S_MIN, Q_MAX, K_MIN = 0.05, 1e-2, 1e5
 C_MIN = 0.98
 Q_GATE1, Q_GATE2 = 0.30, 0.10
+# Gate 2 tolerance of each error component, so that ‖e/TOL‖ = 1 marks the gate boundary.
+TOL = {"plain": np.array([Q_GATE2, 0.02, 0.02, 0.02]),
+       "nilpotent": np.array([0.02, 0.05, Q_GATE2/2]),
+       "maximal": np.array([0.02, 0.02, Q_GATE2/2])}
 
 
 def metrics(raw):
@@ -45,14 +49,14 @@ def profile(m, case):
 
 
 def fitness(m, case):
-    """Saturating, not clamped: ranks every candidate so selection keeps its pressure."""
+    """Saturating and gate-scaled, so selection ranks by distance to the Gate 2 boundary."""
     if m is None or (case == "plain" and m["scale"] < S_MIN):
         return -1.0
     if case == "plain":
         error = np.r_[np.sqrt(m["eta"]), profile(m, case), max(0, -m["C"])]
     else:
         error = np.r_[profile(m, case), abs(m["tr"])/2]
-    return 1/(1+np.linalg.norm(error))
+    return 1/(1+np.linalg.norm(error/TOL[case]))
 
 
 def root_error(m, case):
