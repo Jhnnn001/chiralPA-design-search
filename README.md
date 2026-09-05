@@ -6,7 +6,7 @@ Code accompanying supplementary Note S5 of *Chiral Perfect Absorption in Flat Op
 
 Required:
 
-- S4 with its Lua frontend — the RCWA solver.
+- [S4](https://web.stanford.edu/group/fan/S4/install.html) with its Lua frontend — the RCWA solver.
 - Lua development libraries and a C/C++ compiler — needed to build S4.
 - Python 3.11 or later.
 - NumPy and SciPy — versions are specified in `requirements.txt`.
@@ -16,7 +16,9 @@ Optional (material refitting only):
 
 - [AAA](https://docs.scipy.org/doc/scipy-1.15.3/reference/generated/scipy.interpolate.AAA.html) (`scipy.interpolate.AAA`) — included in SciPy 1.15 or later; no separate package installation is needed.
 
-## Install
+## Setup
+
+Use an environment where the dependencies listed above are already installed.
 
 1. Clone this repository and enter its directory.
 
@@ -25,27 +27,28 @@ Optional (material refitting only):
    cd chiralPA-design-search
    ```
 
-2. Build the S4 Lua frontend following the [S4 installation guide](https://web.stanford.edu/group/fan/S4/install.html), using the Lua development libraries and C/C++ compiler listed above.
-   Make the resulting executable available as `S4` on your PATH.
-   If S4 is already installed, skip this step.
-
-3. Create a Python environment and install the Python dependencies.
-   The commands below use a Unix-style shell.
+2. Check Python, NumPy, and SciPy in your current environment.
+   Compare the reported versions with the requirements above and in `requirements.txt`.
 
    ```sh
-   python3 -m venv .venv
-   source .venv/bin/activate
-   python -m pip install -r requirements.txt
+   python --version
+   python -c "import numpy, scipy; print('NumPy:', numpy.__version__); print('SciPy:', scipy.__version__)"
    ```
 
-4. Check the installation.
+3. Run the package checks, including the S4 Lua frontend.
 
    ```sh
-   python check.py
    python check.py --s4 S4
    ```
 
    If S4 is not on your PATH, replace `--s4 S4` with `--s4 /path/to/S4` in the check and search commands.
+   Lua development libraries and a C/C++ compiler are only needed when building S4, so they are not checked here.
+
+4. Optional: check AAA support for material refitting.
+
+   ```sh
+   python -c "from scipy.interpolate import AAA; print('AAA is available')"
+   ```
 
 ## Run
 
