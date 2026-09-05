@@ -61,7 +61,8 @@ python search.py plain --seed 0 --trials 10 --workers 4
 python search.py --help
 ```
 
-Each run creates a new directory under `runs/`, containing `settings.json`, `candidates.jsonl`, and `result.json`.
+Each run creates a new directory under `runs/`, containing `settings.json`, `progress.log`, `candidates.jsonl`, and `result.json`.
+`progress.log` is appended as the search proceeds, with a UTC timestamp on every line, so a running search can be followed with `tail -f`.
 `candidates.jsonl` records each trial's Stage A population size, Gate 1 pass count, and selected count, followed by the visited Stage B/C candidates with `gate1`, `gate2`, and `gate3` flags.
 `result.json` records `trials_completed` and reports `found` only after Gate 3 and fresh validation pass; exhausting the search returns `not_found` and exit code 1.
 Settings and tolerances are in the command-line defaults and `objectives.py`.

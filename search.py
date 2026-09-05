@@ -17,6 +17,17 @@ class Stalled(Exception):
     pass
 
 
+LOG = None
+
+
+def log(message):
+    """Print progress and append it to progress.log once the run directory exists."""
+    print(message, flush=True)
+    if LOG is not None:
+        with LOG.open("a") as f:
+            f.write(f"{datetime.now(timezone.utc):%Y-%m-%dT%H:%M:%SZ} {message}\n")
+
+
 def stage_a(ev, rng, case, population=100, generations=100):
     ev.reset()
     pop = np.array([sample(rng) for _ in range(population)])
@@ -42,7 +53,7 @@ def stage_a(ev, rng, case, population=100, generations=100):
         pop = np.vstack([pop[:2], children])
         fit = np.r_[fit[:2], [fitness(m, case) for m in ev.batch(children)]]
         if (generation+1) % 10 == 0:
-            print(f"A generation {generation+1}: F={fit.max():.6f}", flush=True)
+            log(f"A generation {generation+1}: F={fit.max():.6f}")
     return pop[np.argsort(-fit, kind="stable")]
 
 
@@ -75,7 +86,7 @@ def stage_b(ev, p0, case, budget=400):
 
     def callback(u):
         history.append(fitness(best[1], case))
-        if len(history) > 5 and history[-1]-history[-6] < 1e-3:
+        if len(history) > 30 and history[-1]-history[-31] < 1e-6:
             raise Stalled
 
     u0 = np.clip((p0-LO)/(HI-LO), 0, 1)
@@ -186,25 +197,28 @@ def main():
         p0 = np.array([data[name] for name in NAMES], float)
         if not feasible(p0):
             raise ValueError("The start geometry does not satisfy the design constraints")
+    global LOG
     ev = Evaluator(args.s4, args.numg, args.workers)
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
     output = args.output or Path("runs")/f"{args.case}_{stamp}"
     try:
         output.mkdir(parents=True, exist_ok=False)
+        LOG = output/"progress.log"
         settings = {k: v for k, v in vars(args).items() if k not in ("s4", "start", "output")}
         settings.update(solver=Path(args.s4).name, numpy=np.__version__, scipy=scipy.__version__)
         with (output/"settings.json").open("x") as f:
             json.dump(settings, f, indent=2)
         found = None
-        for trial in range(args.trials if p0 is None else 1):
+        trials = args.trials if p0 is None else 1
+        for trial in range(trials):
             rng = np.random.default_rng(np.random.SeedSequence([args.seed, trial]))
-            print(f"Trial {trial+1}: {args.case}", flush=True)
+            log(f"Trial {trial+1}/{trials}: {args.case}")
             if p0 is None:
                 pop = stage_a(ev, rng, args.case, args.population, args.generations)
                 responses = ev.batch(pop)
                 candidates = survivors(pop, responses, args.case)
                 passed = sum(bool(gate1(m, args.case)) for m in responses)
-                print(f"A: gate1={passed}/{len(pop)}, selected={len(candidates)}", flush=True)
+                log(f"A: gate1={passed}/{len(pop)}, selected={len(candidates)}")
                 with (output/"candidates.jsonl").open("a") as f:
                     f.write(json.dumps(dict(trial=trial+1, stage="A", population=len(pop),
                                             gate1_passed=passed, selected=len(candidates)))+"\n")
@@ -214,7 +228,7 @@ def main():
                 p, m = stage_b(ev, p, args.case, args.budget_b)
                 with (output/"candidates.jsonl").open("a") as f:
                     f.write(json.dumps(dict(trial=trial+1, stage="B", **record(p, m, args.case)))+"\n")
-                print(f"B: F={fitness(m, args.case):.6f}, gate2={bool(gate2(m, args.case))}", flush=True)
+                log(f"B: F={fitness(m, args.case):.6f}, gate2={bool(gate2(m, args.case))}")
                 if not gate2(m, args.case):
                     continue
                 candidate = stage_c(ev, p, args.case, rng, args.budget_c, args.starts)
@@ -223,7 +237,7 @@ def main():
                 p, m = candidate
                 with (output/"candidates.jsonl").open("a") as f:
                     f.write(json.dumps(dict(trial=trial+1, stage="C", **record(p, m, args.case)))+"\n")
-                print(f"C: root={root_error(m, args.case):.3e}, gate3={bool(gate3(m, args.case))}", flush=True)
+                log(f"C: root={root_error(m, args.case):.3e}, gate3={bool(gate3(m, args.case))}")
                 if gate3(m, args.case):
                     checked = validate(ev, p, args.case)
                     if checked is not None:
@@ -237,7 +251,7 @@ def main():
             result.update(found)
         with (output/"result.json").open("x") as f:
             json.dump(result, f, indent=2, allow_nan=False)
-        print(f"{result['status']}: {output}")
+        log(f"{result['status']}: {output}, evaluations={ev.nfev}")
         return 0 if found is not None else 1
     finally:
         ev.close()
