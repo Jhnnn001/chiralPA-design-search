@@ -45,13 +45,14 @@ def profile(m, case):
 
 
 def fitness(m, case):
+    """Saturating, not clamped: ranks every candidate so selection keeps its pressure."""
     if m is None or (case == "plain" and m["scale"] < S_MIN):
         return -1.0
     if case == "plain":
         error = np.r_[np.sqrt(m["eta"]), profile(m, case), max(0, -m["C"])]
     else:
         error = np.r_[profile(m, case), abs(m["tr"])/2]
-    return 1-min(1, np.linalg.norm(error))
+    return 1/(1+np.linalg.norm(error))
 
 
 def root_error(m, case):

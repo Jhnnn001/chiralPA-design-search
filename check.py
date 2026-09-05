@@ -49,6 +49,10 @@ def main():
         assert np.linalg.norm(residual(m, p, case, 0.3, p[10])) < 1e-12
     scalar = metrics(0.3*np.eye(2))
     assert scalar["K"] == 1 and fitness(scalar, "plain") == -1
+    # fitness must keep ranking poor candidates instead of tying them at one value
+    poor = [fitness(metrics(ideal["maximal"]["J"]+d*np.eye(2)), "maximal")
+            for d in (0.1, 0.3, 0.6, 1.0, 2.0)]
+    assert all(0 < b < a for a, b in zip(poor, poor[1:]))
     assert not gate3(metrics(np.zeros((2, 2))), "nilpotent")
     assert not gate3(metrics(1.1*ideal["maximal"]["J"]), "maximal")
     assert metrics(np.array([[0, 0.1], [0.2, 0]])) is None
