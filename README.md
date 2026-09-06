@@ -12,9 +12,9 @@ Required:
 - NumPy and SciPy — versions are specified in `requirements.txt`.
 - Git — for cloning this repository.
 
-Optional (material refitting only):
+Optional:
 
-- [AAA](https://docs.scipy.org/doc/scipy-1.15.3/reference/generated/scipy.interpolate.AAA.html) (`scipy.interpolate.AAA`) — included in SciPy 1.15 or later; no separate package installation is needed.
+- [AAA](https://docs.scipy.org/doc/scipy-1.15.3/reference/generated/scipy.interpolate.AAA.html) (`scipy.interpolate.AAA`) — used only for refitting the TiO₂ material model; it is included in SciPy 1.15 or later, so no separate package installation is needed.
 
 ## Setup
 
@@ -59,21 +59,21 @@ The general form is:
 python search.py <case> --seed <int> --trials <int> --workers <int> --numg <int> --budget-b <int> --budget-c <int>
 ```
 
-The target is required; every `--` option takes the default below when omitted.
+The target is required and every `--` option may be omitted; defaults are given in parentheses.
 
 - `<case>` — the target: `plain`, `nilpotent`, or `maximal`.
 - `--seed <int>` — random seed; a given seed reproduces the same search exactly (default 0).
 - `--trials <int>` — maximum number of independent trials; the search stops at the first accepted design (default 10).
 - `--workers <int>` — parallel S4 processes for Stage A; Stages B and C evaluate one point at a time (default 4).
-- `--numg <int>` — Fourier truncation shared by every stage and recorded in `settings.json`; acceptance at one truncation does not establish convergence (default 101).
+- `--numg <int>` — Fourier truncation order of the RCWA solver, used by every stage (default 101).
 - `--budget-b <int>` — S4 evaluations allowed for each Stage B candidate (default 400).
 - `--budget-c <int>` — S4 evaluations allowed for each Stage C candidate, shared by all of its starts (default 4000).
 - `--population <int>` — Stage A population size, at least 3 (default 100).
 - `--generations <int>` — Stage A generations (default 100).
 - `--starts <int>` — Stage C starts per candidate (default 4).
 - `--s4 <path>` — S4 Lua executable when it is not on your PATH (default `S4`).
-- `--start <file>` — JSON file holding a `p_nm` object as written in any candidate or result record; skips Stage A and refines that design from Stage B onward (default none).
-- `--output <dir>` — output directory in place of the timestamped default; an existing directory is never overwritten (default none).
+- `--start <file>` — refine a saved design from Stage B onward; the file is JSON with a `p_nm` object as written in the result records.
+- `--output <dir>` — output directory instead of the timestamped default.
 
 For example:
 
