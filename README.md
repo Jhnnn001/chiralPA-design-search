@@ -1,6 +1,6 @@
 # Chiral perfect-absorption design search
 
-Code accompanying supplementary Note S5 of *Chiral Perfect Absorption in Flat Optics: A Jones Exceptional Point of Maximal Response Strength*.
+Code accompanying supplementary Note S5 of *Chiral Perfect Absorption in a Metasurface via a Jones Exceptional Point with Maximal Response Strength*.
 
 ## Dependencies
 
