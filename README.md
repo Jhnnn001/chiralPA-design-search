@@ -93,7 +93,7 @@ runs/<case>_<YYYYMMDD>T<HHMMSS><ffffff>Z/
 
 `result.json` reports `found` when a design is accepted and `not_found` when every trial is exhausted.
 The process exits with status 0 in the first case and 1 in the second, so a shell script can test the outcome.
-Example runs for the three targets are kept under `runs/`.
+Example runs are kept under `runs/`: one accepted design for each of the three targets, and one `not_found` run of ten trials for `maximal`.
 
 Other commands:
 
@@ -124,7 +124,7 @@ python materials/fit_tio2.py 6 14
 | `solver.py`, `solver.lua` | S4 execution and reflection Jones-matrix extraction. |
 | `materials/` | Frozen Ag, SiO₂, and TiO₂ models and the TiO₂ fitting script. |
 | `materials/data/` | Johnson–Christy Ag data, Malitson SiO₂ data, and the measured TiO₂ table. |
-| `runs/` | Generated settings, progress logs, candidates, and results; the three example runs are included. |
+| `runs/` | Generated settings, progress logs, candidates, and results; the example runs are included. |
 | `check.py` | Runnable numerical and execution checks. |
 
 Material sources are identified in the model and table headers.

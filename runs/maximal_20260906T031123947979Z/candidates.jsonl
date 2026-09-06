@@ -1,0 +1,11 @@
+{"trial": 1, "stage": "A", "population": 100, "gate1_passed": 3, "selected": 1}
+{"trial": 1, "stage": "B", "case": "maximal", "p_nm": {"W": 335.2044607398039, "L": 329.3863266132839, "a1": 106.00244874188927, "b1": 185.06301002835824, "a2": 51.62282042122254, "b2": 64.76793329378458, "tTiO2": 337.23305754564365, "tSiO2": 214.09446460829986, "Px": 443.8144628272612, "Py": 428.2840083371356, "lam": 510.6776593787817}, "gate1": true, "gate2": false, "gate3": false, "metrics": {"Ap": 0.9936370724607437, "Am": 0.065429771123102, "C": 0.9282073013376417, "mean": 0.5295334217919229, "s1": 0.9670453111552938, "s2": 0.07587175092691352, "K": 3.728864121285617, "scale": 1.879081039649495, "reciprocity": 7.055120641250228e-14, "F": 0.2309991024875632, "root_error": 0.2708715950095433}, "J_real": [[0.09653103951625783, -0.48004986665248467], [-0.4800498666525221, -0.07016320704449186]], "J_imag": [[0.4793644982421939, 0.15484750180219134], [0.15484750180225115, -0.43364786457834215]]}
+{"trial": 2, "stage": "A", "population": 100, "gate1_passed": 0, "selected": 0}
+{"trial": 3, "stage": "A", "population": 100, "gate1_passed": 0, "selected": 0}
+{"trial": 4, "stage": "A", "population": 100, "gate1_passed": 0, "selected": 0}
+{"trial": 5, "stage": "A", "population": 100, "gate1_passed": 0, "selected": 0}
+{"trial": 6, "stage": "A", "population": 100, "gate1_passed": 0, "selected": 0}
+{"trial": 7, "stage": "A", "population": 100, "gate1_passed": 0, "selected": 0}
+{"trial": 8, "stage": "A", "population": 100, "gate1_passed": 0, "selected": 0}
+{"trial": 9, "stage": "A", "population": 100, "gate1_passed": 0, "selected": 0}
+{"trial": 10, "stage": "A", "population": 100, "gate1_passed": 0, "selected": 0}
