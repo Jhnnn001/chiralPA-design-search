@@ -123,7 +123,7 @@ python materials/fit_tio2.py 6 14
 | `solver.py`, `solver.lua` | S4 execution and reflection Jones-matrix extraction. |
 | `materials/` | Frozen Ag, SiO₂, and TiO₂ models and the TiO₂ fitting script. |
 | `materials/data/` | Johnson–Christy Ag data, Malitson SiO₂ data, and the measured TiO₂ table. |
-| `runs/` | Generated settings, candidates, and results; excluded from Git. |
+| `runs/` | Generated settings, progress logs, candidates, and results; the three example runs are included. |
 | `check.py` | Runnable numerical and execution checks. |
 
 Material sources are identified in the model and table headers.

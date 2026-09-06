@@ -1,0 +1,15 @@
+{
+  "case": "maximal",
+  "numg": 51,
+  "seed": 0,
+  "trials": 500,
+  "workers": 8,
+  "population": 100,
+  "generations": 100,
+  "budget_b": 400,
+  "budget_c": 4000,
+  "starts": 4,
+  "solver": "S4",
+  "numpy": "2.4.6",
+  "scipy": "1.17.1"
+}
