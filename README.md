@@ -52,56 +52,67 @@ Use an environment where the dependencies listed above are already installed.
 
 ## Run
 
-Run these commands from the repository directory.
+Run the search from the repository directory.
+The general form is:
 
 ```sh
-python search.py maximal --seed 0 --trials 10 --workers 4
-python search.py nilpotent --seed 0 --trials 10 --workers 4
-python search.py plain --seed 0 --trials 10 --workers 4
+python search.py <case> --seed <int> --trials <int> --workers <int> --numg <int> --budget-b <int> --budget-c <int>
+```
+
+The target is required; every `--` option takes the default below when omitted.
+
+- `<case>` — the target: `plain`, `nilpotent`, or `maximal`.
+- `--seed <int>` — random seed; a given seed reproduces the same search exactly (default 0).
+- `--trials <int>` — maximum number of independent trials; the search stops at the first accepted design (default 10).
+- `--workers <int>` — parallel S4 processes for Stage A; Stages B and C evaluate one point at a time (default 4).
+- `--numg <int>` — Fourier truncation shared by every stage and recorded in `settings.json`; acceptance at one truncation does not establish convergence (default 101).
+- `--budget-b <int>` — S4 evaluations allowed for each Stage B candidate (default 400).
+- `--budget-c <int>` — S4 evaluations allowed for each Stage C candidate, shared by all of its starts (default 4000).
+- `--population <int>` — Stage A population size, at least 3 (default 100).
+- `--generations <int>` — Stage A generations (default 100).
+- `--starts <int>` — Stage C starts per candidate (default 4).
+- `--s4 <path>` — S4 Lua executable when it is not on your PATH (default `S4`).
+- `--start <file>` — JSON file holding a `p_nm` object as written in any candidate or result record; skips Stage A and refines that design from Stage B onward (default none).
+- `--output <dir>` — output directory in place of the timestamped default; an existing directory is never overwritten (default none).
+
+For example:
+
+```sh
+python search.py maximal --seed 0 --trials 500 --workers 8 --numg 51
+```
+
+Each run creates one directory under `runs/`, named by the target and the UTC start time:
+
+```
+runs/<case>_<YYYYMMDD>T<HHMMSS><ffffff>Z/
+├── settings.json     # the settings used, with the solver name and the NumPy and SciPy versions
+├── progress.log      # UTC-stamped stage messages, appended while the search runs; follow with tail -f
+├── candidates.jsonl  # one line per trial's Stage A summary and per visited Stage B and Stage C candidate
+└── result.json       # found or not_found, trials and evaluations used, and the accepted design with its metrics
+```
+
+`result.json` reports `found` only after the final gate and three matching fresh evaluations; an exhausted search reports `not_found` and exits with code 1.
+Example runs for the three targets are kept under `runs/`.
+
+Other commands:
+
+Full option list:
+
+```sh
 python search.py --help
 ```
 
-Each run creates a new directory under `runs/`, containing `settings.json`, `progress.log`, `candidates.jsonl`, and `result.json`.
-`progress.log` is appended as the search proceeds, with a UTC timestamp on every line, so a running search can be followed with `tail -f`.
-`candidates.jsonl` records each trial's Stage A population size, Gate 1 pass count, and selected count, followed by the visited Stage B/C candidates with `gate1`, `gate2`, and `gate3` flags.
-`result.json` records `trials_completed` and reports `found` only after Gate 3 and fresh validation pass; exhausting the search returns `not_found` and exit code 1.
-Settings and tolerances are in the command-line defaults and `objectives.py`.
-The common solver setting is configurable with `--numg` and recorded in `settings.json`.
-Search acceptance does not establish Fourier-order convergence.
-Use `--output runs/my-run` to choose a new output directory; existing directories are never overwritten.
-To refine a saved design from Stage B onward, use `--start design.json`, where `design.json` contains the `p_nm` object written in a candidate or result record.
-This skips Stage A and Gate 1 selection; Gates 2 and 3 still apply.
-
-The search follows Stage A → Gate 1 → Stage B → Gate 2 → Stage C → Gate 3.
-Gate 1 filters the final Stage A population before selecting at most six distinct candidates in descending F order, using a normalized separation greater than 0.02.
-If none pass, the next trial starts without running Stage B.
-
-| Target | Gate 1 response tests | Gate 2 response tests |
-| --- | --- | --- |
-| Maximal response | C ≥ 0.85 | C ≥ 0.98 |
-| Zero eigenvalue (`nilpotent`) | C within 0.10 of 0.36; A₊ within 0.10 of 1 | C within 0.03 of 0.36; A₊ within 0.02 of 1 |
-| Plain | σ₁ − σ₂ within 0.10 of 0.6; Ā within 0.10 of 0.5; C > 0 | Same targets within 0.02; C > 0 |
-
-Here C = A₊ − A₋ and Ā = (A₊ + A₋)/2.
-Gates 1 and 2 additionally require `root_error` ≤ 0.30 and ≤ 0.10 respectively for every target.
-The diagnostic is √η_D with S_D ≥ 0.05 for plain EPs, and max(|tr J|, √|det J|) for the zero-eigenvalue and maximal-response targets.
-These two EP screening limits are provisional settings, without a search-success calibration.
-Gate 3 retains the strict response tests and requires `root_error` ≤ 0.01, K ≥ 100000, S_D > 0, σ₁ ≤ 1 + 10⁻⁸, and admissible geometry, followed by three fresh matching Jones evaluations.
-The former Gates 1 and 2 are now Gates 2 and 3, with the EP proximity test added to Gate 2 and the final acceptance criteria preserved.
-
-For a short execution check, with no expectation of finding an EP:
+Short execution check, with no expectation of finding an EP:
 
 ```sh
 python search.py maximal --population 3 --generations 1 --trials 1 --budget-b 24 --budget-c 24
 ```
 
-To rerun the TiO₂ fitting procedure with six pole pairs and fourteen starts:
+TiO₂ refit with six pole pairs and fourteen starts; it prints coefficients without modifying the frozen model used by the search:
 
 ```sh
 python materials/fit_tio2.py 6 14
 ```
-
-The refit prints coefficients without modifying the frozen model used by the search.
 
 ## Files and folders
 
