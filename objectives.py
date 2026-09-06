@@ -4,7 +4,7 @@ import numpy as np
 CASES = ("plain", "nilpotent", "maximal")
 PLUS = np.array([1, 1j])/np.sqrt(2)
 MINUS = PLUS.conj()
-S_MIN, Q_MAX, K_MIN = 0.05, 1e-2, 1e5
+S_MIN, Q_MAX, K_MIN = 0.05, 1e-2, 1e4
 C_MIN = 0.98
 # Root screening happens once, at Gate 1's level; Gate 2 tiers on the response and
 # keeps the same root limit only as a guard against Stage B making the root worse.

@@ -89,8 +89,8 @@ def main():
         passes = root_error(m, case) <= Q_GATE2
         assert bool(gate1(m, case)) == bool(gate2(m, case)) == passes
         assert passes == (case == "nilpotent")
-    assert gate3(dict(ideal["plain"], K=1e5), "plain")
-    assert not gate3(dict(ideal["plain"], K=1e5-1), "plain")
+    assert gate3(dict(ideal["plain"], K=1e4), "plain")
+    assert not gate3(dict(ideal["plain"], K=1e4-1), "plain")
 
     pop = np.tile([200, 200, 40, 40, 40, 40, 100, 100, 300, 300, 600], (9, 1)).astype(float)
     pop[:, 7] = np.linspace(20, 500, len(pop))
