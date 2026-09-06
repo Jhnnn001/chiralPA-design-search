@@ -72,8 +72,8 @@ The target is required and every `--` option may be omitted; defaults are given 
 - `--generations <int>` — Stage A generations (default 100).
 - `--starts <int>` — Stage C starts per candidate (default 4).
 - `--s4 <path>` — S4 Lua executable when it is not on your PATH (default `S4`).
-- `--start <file>` — refine a saved design from Stage B onward; the file is JSON with a `p_nm` object as written in the result records.
-- `--output <dir>` — output directory instead of the timestamped default.
+- `--start <file>` — refine a saved design from Stage B onward; the file is JSON with a `p_nm` object as written in the result records (default: none, the search starts from Stage A).
+- `--output <dir>` — output directory (default `runs/<case>_<timestamp>`).
 
 For example:
 
@@ -91,7 +91,8 @@ runs/<case>_<YYYYMMDD>T<HHMMSS><ffffff>Z/
 └── result.json       # found or not_found, trials and evaluations used, and the accepted design with its metrics
 ```
 
-`result.json` reports `found` only after the final gate and three matching fresh evaluations; an exhausted search reports `not_found` and exits with code 1.
+`result.json` reports `found` when a design is accepted and `not_found` when every trial is exhausted.
+The process exits with status 0 in the first case and 1 in the second, so a shell script can test the outcome.
 Example runs for the three targets are kept under `runs/`.
 
 Other commands:
@@ -128,3 +129,24 @@ python materials/fit_tio2.py 6 14
 
 Material sources are identified in the model and table headers.
 The Ag and SiO₂ models use published coefficients; only TiO₂ is fitted locally.
+
+## References
+
+The RCWA solver is S4 [1].
+Stage B uses SciPy's SLSQP and Stage C uses SciPy's trust-region-reflective least squares [2–4]; neither optimizer is implemented in this repository.
+The Stage A genetic algorithm is a standard implementation of tournament selection, uniform crossover, Gaussian mutation, and elitism [5–8].
+The Ag model uses the Drude–Lorentz coefficients of [9] and is checked against the table of [10]; the SiO₂ model is the Sellmeier equation of [11]; the TiO₂ model is fitted to the measured table with the AAA algorithm [12] following [13].
+
+1. V. Liu and S. Fan, "S⁴: A free electromagnetic solver for layered periodic structures," Comput. Phys. Commun. 183, 2233–2244 (2012). https://web.stanford.edu/group/fan/S4/
+2. P. Virtanen et al., "SciPy 1.0: fundamental algorithms for scientific computing in Python," Nat. Methods 17, 261–272 (2020). https://scipy.org/
+3. D. Kraft, "A software package for sequential quadratic programming," DFVLR-FB 88-28, DLR (1988); used through `scipy.optimize.minimize(method="SLSQP")`. https://docs.scipy.org/doc/scipy/reference/optimize.minimize-slsqp.html
+4. M. A. Branch, T. F. Coleman, and Y. Li, "A subspace, interior, and conjugate gradient method for large-scale bound-constrained minimization problems," SIAM J. Sci. Comput. 21, 1–23 (1999); used through `scipy.optimize.least_squares(method="trf")`. https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html
+5. J. H. Holland, *Adaptation in Natural and Artificial Systems* (University of Michigan Press, 1975).
+6. D. E. Goldberg, *Genetic Algorithms in Search, Optimization, and Machine Learning* (Addison-Wesley, 1989).
+7. B. L. Miller and D. E. Goldberg, "Genetic algorithms, tournament selection, and the effects of noise," Complex Systems 9, 193–212 (1995).
+8. G. Syswerda, "Uniform crossover in genetic algorithms," in *Proceedings of the Third International Conference on Genetic Algorithms* (Morgan Kaufmann, 1989), pp. 2–9.
+9. H. S. Sehmi, W. Langbein, and E. A. Muljarov, "Optimizing the Drude–Lorentz model for material permittivity: Method, program, and examples for gold, silver, and copper," Phys. Rev. B 95, 115444 (2017).
+10. P. B. Johnson and R. W. Christy, "Optical constants of the noble metals," Phys. Rev. B 6, 4370–4379 (1972).
+11. I. H. Malitson, "Interspecimen comparison of the refractive index of fused silica," J. Opt. Soc. Am. 55, 1205–1209 (1965).
+12. Y. Nakatsukasa, O. Sète, and L. N. Trefethen, "The AAA algorithm for rational approximation," SIAM J. Sci. Comput. 40, A1494–A1522 (2018).
+13. F. Betz, M. Hammerschmidt, L. Zschiedrich, S. Burger, and F. Binkowski, "Efficient rational approximation of optical response functions with the AAA algorithm," Laser Photonics Rev. 18, 2400584 (2024).
