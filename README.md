@@ -133,20 +133,14 @@ The Ag and SiO₂ models use published coefficients; only TiO₂ is fitted local
 ## References
 
 The RCWA solver is S4 [1].
-Stage B uses SciPy's SLSQP and Stage C uses SciPy's trust-region-reflective least squares [2–4]; neither optimizer is implemented in this repository.
-The Stage A genetic algorithm is a standard implementation of tournament selection, uniform crossover, Gaussian mutation, and elitism [5–8].
-The Ag model uses the Drude–Lorentz coefficients of [9] and is checked against the table of [10]; the SiO₂ model is the Sellmeier equation of [11]; the TiO₂ model is fitted to the measured table with the AAA algorithm [12] following [13].
+Stage B uses SciPy's SLSQP and Stage C uses SciPy's trust-region-reflective least squares [2]; neither optimizer is implemented in this repository.
+The Stage A genetic algorithm is a standard implementation of tournament selection, uniform crossover, Gaussian mutation, and elitism [3].
+The Ag model uses the Drude–Lorentz coefficients of [4] and is checked against the table of [5]; the SiO₂ model is the Sellmeier equation of [6]; the TiO₂ model is fitted to the measured table with the AAA algorithm [7].
 
 1. V. Liu and S. Fan, "S⁴: A free electromagnetic solver for layered periodic structures," Comput. Phys. Commun. 183, 2233–2244 (2012). https://web.stanford.edu/group/fan/S4/
-2. P. Virtanen et al., "SciPy 1.0: fundamental algorithms for scientific computing in Python," Nat. Methods 17, 261–272 (2020). https://scipy.org/
-3. D. Kraft, "A software package for sequential quadratic programming," DFVLR-FB 88-28, DLR (1988); used through `scipy.optimize.minimize(method="SLSQP")`. https://docs.scipy.org/doc/scipy/reference/optimize.minimize-slsqp.html
-4. M. A. Branch, T. F. Coleman, and Y. Li, "A subspace, interior, and conjugate gradient method for large-scale bound-constrained minimization problems," SIAM J. Sci. Comput. 21, 1–23 (1999); used through `scipy.optimize.least_squares(method="trf")`. https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html
-5. J. H. Holland, *Adaptation in Natural and Artificial Systems* (University of Michigan Press, 1975).
-6. D. E. Goldberg, *Genetic Algorithms in Search, Optimization, and Machine Learning* (Addison-Wesley, 1989).
-7. B. L. Miller and D. E. Goldberg, "Genetic algorithms, tournament selection, and the effects of noise," Complex Systems 9, 193–212 (1995).
-8. G. Syswerda, "Uniform crossover in genetic algorithms," in *Proceedings of the Third International Conference on Genetic Algorithms* (Morgan Kaufmann, 1989), pp. 2–9.
-9. H. S. Sehmi, W. Langbein, and E. A. Muljarov, "Optimizing the Drude–Lorentz model for material permittivity: Method, program, and examples for gold, silver, and copper," Phys. Rev. B 95, 115444 (2017).
-10. P. B. Johnson and R. W. Christy, "Optical constants of the noble metals," Phys. Rev. B 6, 4370–4379 (1972).
-11. I. H. Malitson, "Interspecimen comparison of the refractive index of fused silica," J. Opt. Soc. Am. 55, 1205–1209 (1965).
-12. Y. Nakatsukasa, O. Sète, and L. N. Trefethen, "The AAA algorithm for rational approximation," SIAM J. Sci. Comput. 40, A1494–A1522 (2018).
-13. F. Betz, M. Hammerschmidt, L. Zschiedrich, S. Burger, and F. Binkowski, "Efficient rational approximation of optical response functions with the AAA algorithm," Laser Photonics Rev. 18, 2400584 (2024).
+2. SciPy, https://scipy.org/ — SLSQP: https://docs.scipy.org/doc/scipy/reference/optimize.minimize-slsqp.html; trust-region-reflective least squares: https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html
+3. A. E. Eiben and J. E. Smith, *Introduction to Evolutionary Computing*, 2nd ed. (Springer, 2015).
+4. H. S. Sehmi, W. Langbein, and E. A. Muljarov, "Optimizing the Drude–Lorentz model for material permittivity: Method, program, and examples for gold, silver, and copper," Phys. Rev. B 95, 115444 (2017).
+5. P. B. Johnson and R. W. Christy, "Optical constants of the noble metals," Phys. Rev. B 6, 4370–4379 (1972).
+6. I. H. Malitson, "Interspecimen comparison of the refractive index of fused silica," J. Opt. Soc. Am. 55, 1205–1209 (1965).
+7. Y. Nakatsukasa, O. Sète, and L. N. Trefethen, "The AAA algorithm for rational approximation," SIAM J. Sci. Comput. 40, A1494–A1522 (2018).
