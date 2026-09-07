@@ -1,4 +1,4 @@
-"""Objectives and gates of supplementary Note S5."""
+"""Objectives and gates of supplementary Note S6."""
 import numpy as np
 
 CASES = ("plain", "nilpotent", "maximal")

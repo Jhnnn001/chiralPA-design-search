@@ -1,4 +1,4 @@
-"""Three-stage EP design search; see supplementary Note S5 for the method."""
+"""Three-stage EP design search; see supplementary Note S6 for the method."""
 import argparse
 from datetime import datetime, timezone
 import json
